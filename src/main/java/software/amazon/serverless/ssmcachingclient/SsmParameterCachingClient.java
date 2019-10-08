@@ -1,4 +1,4 @@
-package software.amazon.ssmcachingclient;
+package software.amazon.serverless.ssmcachingclient;
 
 import java.time.Clock;
 import java.time.Duration;
