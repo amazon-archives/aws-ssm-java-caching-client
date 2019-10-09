@@ -11,6 +11,19 @@
     <name>aws-ssm-java-caching-client</name>
     <url>https://github.com/awslabs/aws-ssm-java-caching-client</url>
 
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://aws.amazon.com/apache2.0</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <scm>
+        <connection>scm:git:https://github.com/awslabs/aws-ssm-java-caching-client.git</connection>
+        <developerConnection>scm:git:git@github.com:awslabs/aws-ssm-java-caching-client.git</developerConnection>
+        <url>https://github.com/awslabs/aws-ssm-java-caching-client</url>
+    </scm>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
