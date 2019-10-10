@@ -172,13 +172,6 @@
                                 </goals>
                             </execution>
                         </executions>
-                        <configuration>
-                            <excludes>
-                                <exclude>**/*</exclude>
-                            </excludes>
-                            <excludeResources>true</excludeResources>
-                            <forceCreation>true</forceCreation>
-                        </configuration>
                     </plugin>
                     <plugin>
                         <!-- Package the Javadoc JAR -->
