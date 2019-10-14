@@ -1,4 +1,4 @@
-# aws-ssm-java-caching-client
+# aws-ssm-java-caching-client ![Build Status](https://codebuild.us-east-1.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiSzNueFVRdVdwSWhuOEZQL2FjTWZRaHh5S1luTzJ0aURsVHNqcVQ4a2RvenRJbHdpbVJ5UmdETXNpSk5uUlovM3BzZ3hFZWx3cEphWGxlYTlncU55OENFPSIsIml2UGFyYW1ldGVyU3BlYyI6IjBHM1RaZ2gzdlEzRWxJUWYiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=master)
 
 aws-ssm-java-caching-client is a Java client-side caching library for AWS Systems Manager Parameter Store. Note, this client wraps the Java SDK V2 version of the AWS SSM client.
 
