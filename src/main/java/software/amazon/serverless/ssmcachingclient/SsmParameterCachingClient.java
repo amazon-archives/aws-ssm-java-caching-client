@@ -7,6 +7,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import lombok.NonNull;
 import lombok.Value;
@@ -67,6 +70,10 @@ import software.amazon.awssdk.services.ssm.paginators.GetParametersByPathIterabl
  */
 @Slf4j
 public class SsmParameterCachingClient {
+    private static final ReadWriteLock READ_WRITE_LOCK = new ReentrantReadWriteLock();
+    private static final Lock WRITE_LOCK = READ_WRITE_LOCK.writeLock();
+    private static final Lock READ_LOCK = READ_WRITE_LOCK.readLock();
+
     private final SsmClient ssm;
     private final Duration ttl;
     private final String pathPrefix;
@@ -144,11 +151,25 @@ public class SsmParameterCachingClient {
      * @return Full Parameter object returned by SSM client.
      */
     public Parameter get(final String name) {
+        // Default to read lock in case the cached parameter is not stale
+        // This will improve performance instead of all calls waiting for a write lock.
+        READ_LOCK.lock();
         CachedParameter cached = getCachedParameter(name);
         if (isStale(cached)) {
+            // Upgrade to write lock to update cached parameter
+            READ_LOCK.unlock();
+            WRITE_LOCK.lock();
             log.debug("SSM Parameter cache miss for pathPrefix={}, name={}. Attempting to load value from SSM.", pathPrefix, name);
             try {
-                cached = load(name);
+                // Recheck staleness because another thread might have
+                // acquired write lock and changed parameter before we did.
+                cached = getCachedParameter(name);
+                if (isStale(cached)) {
+                    cached = load(name);
+                }
+                // Downgrade by acquiring read lock before releasing write lock
+                READ_LOCK.lock();
+
             } catch (Exception e) {
                 // only case where we don't allow stale values is if we found out the parameter they're requesting doesn't exist
                 if (e instanceof ParameterNotFoundException) {
@@ -160,12 +181,18 @@ public class SsmParameterCachingClient {
                     return cached.getParameter();
                 }
                 throw e;
+            } finally {
+                WRITE_LOCK.unlock();
             }
         } else {
             log.debug("SSM Parameter cache hit for pathPrefix={}, name={}. Returning cached value.", pathPrefix, name);
         }
 
-        return cached.parameter;
+        try {
+            return cached.parameter;
+        } finally {
+            READ_LOCK.unlock();
+        }
     }
 
     private CachedParameter getCachedParameter(final String name) {

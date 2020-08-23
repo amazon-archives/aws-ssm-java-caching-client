@@ -12,7 +12,13 @@ import static org.mockito.Mockito.when;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -309,5 +315,33 @@ public class SsmParameterCachingClientTest {
     @Test
     public void getAsStringList_wrongType() throws Exception {
         assertThatThrownBy(() -> client.getAsStringList(STRING_PARAMETER_KEY_SUFFIX)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    public void getCacheForMultipleThreadsAndCallSsmClientOnce() throws InterruptedException {
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        List<Callable<Parameter>> callableList = new ArrayList<>();
+        callableList.add(() -> client.get(STRING_PARAMETER_KEY_SUFFIX));
+        callableList.add(() -> client.get(STRING_PARAMETER_KEY_SUFFIX));
+        callableList.add(() -> client.get(STRING_PARAMETER_KEY_SUFFIX));
+        callableList.add(() -> client.get(STRING_PARAMETER_KEY_SUFFIX));
+        callableList.add(() -> client.get(STRING_PARAMETER_KEY_SUFFIX));
+
+        List<Future<Parameter>> futures = executorService.invokeAll(callableList);
+        GetParametersByPathRequest expected = GetParametersByPathRequest.builder()
+                .path(PATH_PREFIX)
+                .recursive(true)
+                .withDecryption(true)
+                .build();
+
+        // should only have been called the first time
+        verify(ssm, times(1)).getParametersByPathPaginator(expected);
+
+        verifyNoMoreInteractions(ssm);
+
+        for (Future<Parameter> future : futures) {
+            while (!future.isDone()) Thread.sleep(100);
+        }
+        executorService.shutdownNow();
     }
 }
